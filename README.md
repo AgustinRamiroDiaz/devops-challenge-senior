@@ -1,7 +1,3 @@
-**NOTE:** _EXECUTING THIS CHALLENGE WILL CREATE RESOURCES IN YOUR AWS ACCOUNT
-AND WILL COST A FEW DOLLARS. IF THIS IS A PROBLEM FOR YOU, LET US KNOW AND WE
-WILL PROVIDE YOU WITH AN API KEY TO USE._
-
 # Welcome to the Particle41 DevOps Team Challenge
 
 This challenge is for candidates who want to join the Particle41 DevOps team.
