@@ -1,3 +1,5 @@
+**NOTE**: Running this challenge on your account will create resources that are billable. You are responsible for cleaning up your own account. Make sure you do that to avoid unnecessary charges. We do not provide any reibursement for any costs incurred when you work through this challenge.
+
 # Welcome to the Particle41 DevOps Team Challenge
 
 This challenge is for candidates who want to join the Particle41 DevOps team.
