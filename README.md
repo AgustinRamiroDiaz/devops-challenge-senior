@@ -1,4 +1,7 @@
-**NOTE**: Running this challenge on your account will create resources that are billable. You are responsible for cleaning up your own account. Make sure you do that to avoid unnecessary charges. We do not provide any reibursement for any costs incurred when you work through this challenge.
+**NOTE**: Running this challenge on your account will create resources that are
+billable. You are responsible for cleaning up your own account. Make sure you do
+that to avoid unnecessary charges. We do not provide any reimbursement for any
+costs incurred when you work through this challenge.
 
 # Welcome to the Particle41 DevOps Team Challenge
 
@@ -18,28 +21,28 @@ technologies and concepts:
 
 - Software development (in general), by creating an extremely minimal web
   service.
-- Containers, including creating a container container image from scratch and
-  publishing it.
-- Kubernetes, in particular the AWS cloud-native flavor of Kubernetes (Elastic
-  Kubernetes Service).
-- Terraform, including writing a module and using it to deploy infrastructure.
+- Containers, including creating a container image from scratch and publishing
+  it.
+- Cloud infrastructure, including networking and compute resources on the cloud
+  provider of your choice.
+- Terraform/OpenTofu, including writing modules and using them to deploy
+  infrastructure.
 - Documentation, including a short blurb about the purpose/contents of your repo
   as well as simple deployment instructions.
 
-This assessment consists of two parts, with an extra-credit section at the end.
-The first part asks you to create a small application, containerize it, and then
-create a Kubernetes manifest for it. The second part asks you to create a
-terraform module to deploy a VPC + EKS cluster, and deploy the application to
-it.
+This assessment asks you to create a small application, containerize it, and
+deploy it end-to-end to a cloud provider of your choice using
+Terraform/OpenTofu. There is an extra-credit section at the end for
+overachievers.
 
 ## Documentation is MANDATORY
 
-It is mandadory to include documentation for your repository explaining how to
+It is mandatory to include documentation for your repository explaining how to
 use it.
 
 Imagine that someone with less experience than you will need to clone your
-repository and deploy your k8s container, or deploy your terraform
-infrastructure.
+repository and deploy your containerized application, or deploy your
+Terraform/OpenTofu infrastructure.
 
 With that in mind, you must provide all the instructions they will need to do
 that successfully. These must include any prerequisites for deployment; mention
@@ -72,9 +75,9 @@ time (and yours!) submitting a solution that doesn't work.
 
 ---
 
-# Task 1 - Minimalist Application Development / Docker / Kubernetes
+# The Challenge
 
-## Tiny App Development: 'SimpleTimeService'
+## Part 1 - Build and Containerize 'SimpleTimeService'
 
 - Create a simple microservice (which we will call "SimpleTimeService") in any
   programming language of your choice: Go, NodeJS, Python, C#, Ruby, whatever
@@ -89,7 +92,7 @@ time (and yours!) submitting a solution that doesn't work.
 }
 ```
 
-## Dockerize SimpleTimeService
+### Dockerize SimpleTimeService
 
 - Create a Dockerfile for this microservice.
 - Your application MUST be configured to run as a non-root user in the
@@ -97,102 +100,84 @@ time (and yours!) submitting a solution that doesn't work.
 - Publish the image to a public container registry (for example, DockerHub) so
   we can pull it for testing.
 
-## Create a k8s manifest for SimpleTimeService
+## Part 2 - Deploy to the Cloud with Terraform/OpenTofu
 
-- Create a Kubernetes manifest in YAML format, containing a Deployment and a
-  Service, to deploy your microservice on Kubernetes.
-- Your Deployment must use your public Docker image from DockerHub.
-- DO NOT use `LoadBalancer` as the service type!
+Using Terraform or OpenTofu, deploy your containerized application to the
+**cloud provider of your choice** (AWS, GCP, Azure, or any other major cloud
+provider).
 
-## Push your code to a public git repository
+You are free to choose the architecture that best fits the task. Some examples
+include, but are not limited to:
 
-- Push your code to a public git repository in the platform of your choice (e.g.
-  GitHub, GitLab, Bitbucket, etc.). MAKE SURE YOU DON'T PUSH ANY SECRETS LIKE
-  API KEYS TO A PUBLIC REPO!
-- We have a recommended repository structure [here](##Suggested Repo Structure).
+- A managed Kubernetes cluster (EKS, GKE, AKS) with your application deployed
+  to it.
+- A managed container service (ECS, Cloud Run, Azure Container Apps) running
+  your application.
+- A VM-based deployment with Docker installed.
 
-## Acceptance Criteria
+Regardless of which architecture you choose, the following infrastructure
+requirements apply:
 
-Your task will be considered successful if a colleague is able to deploy your
-manifests to a running Kubernetes cluster and use your microservice.
+- Your Terraform/OpenTofu code must create the networking layer (VPC or
+  equivalent) with both public and private subnets/subnetworks.
+- Your application's compute resources (containers, pods, VMs) must run in
+  private subnets only.
+- Your application must be reachable from the internet via a load balancer,
+  gateway, or equivalent mechanism deployed in the public subnets.
 
-Assuming that your manifest file is named `microservice.yml`, the command:
+You are free to use popular modules from the Terraform/OpenTofu registry to
+accomplish this.
 
-```sh
-kubectl apply -f microservice.yml # i.e. your manifest file
-```
-
-must be the only command needed to deploy your microservice to Kubernetes. Your
-application MUST run successfully in Kubernetes.
-
-Other criteria for evaluation will be:
-
-- Documentation: you MUST add a `README` file with instructions to deploy your
-  application.
-- Code quality and style: your code must be easy for others to read, and
-  properly documented when relevant.
-- Container best practices: your container image should be as small as possible,
-  without unnecessary bloat.
-- Container best practices: your application MUST be running as a non-root user,
-  as specified in the exercise.
-
-Your task will be considered successful if a colleague is able to deploy your
-application to a Kubernetes cluster and it gives the correct response.
-
----
-
-# Task 2 - Terraform and AWS: create an EKS cluster
-
-Using Terraform, create the following infrastructure in AWS:
-
-- A VPC with 2 public and 2 private subnets.
-- An EKS cluster deployed to that VPC.
-- The cluster must have 2 nodes, using instance type `m6a.large`.
-- The nodes must be on the private subnets only.
-
-If you prefer, you may use popular modules from the Terraform registry (for
-example the
-[VPC](https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest)
-and
-[EKS](https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest)
-modules).
-
-## Push your code to a public git repository
+### Push your code to a public git repository
 
 - Push your code to a public git repository in the platform of your choice (e.g.
   GitHub, GitLab, Bitbucket, etc.). MAKE SURE YOU DON'T PUSH ANY SECRETS LIKE
   API KEYS TO A PUBLIC REPO!
-- We have a recommended repository structure [here](##Suggested Repo Structure).
+- We have a recommended repository structure [here](#suggested-repo-structure).
 
 ---
 
 ## Acceptance Criteria
+
+### Part 1
+
+- Your container image must be publicly available in a container registry.
+- Your application must return the correct JSON response when accessed.
+- Your container must run as a non-root user.
+- Your container image should be as small as possible, without unnecessary bloat.
+
+### Part 2
 
 Your task will be considered successful if a colleague is able to deploy the
-infrastructure to an AWS account and the correct resources are created.
+infrastructure to a cloud account and access your running application.
 
 ```sh
-terraform plan
+terraform plan # or tofu plan
 ```
 
 and
 
 ```sh
-terraform apply
+terraform apply # or tofu apply
 ```
 
-must be the only commands needed to create the VPC and EKS cluster.
+must be the only commands needed to deploy the full infrastructure and
+application.
 
 You MUST NOT commit any credentials to the git repository. Instead, provide
-instructions in the README about how to authenticate to AWS to deploy the
-infrastructure.
+instructions in the README about how to authenticate to your chosen cloud
+provider to deploy the infrastructure.
 
-Other criteria for evaluation will be:
+### General
 
+- Documentation: you MUST add a `README` file with instructions to deploy your
+  application and infrastructure.
 - Code quality and style: your code must be easy for others to read, and
   properly documented when relevant.
-- Terraform best practices: Use variables in your infrastructure root module,
-  and provide some good defaults in a `terraform.tfvars` file.
+- Terraform/OpenTofu best practices: Use variables in your infrastructure root
+  module, and provide sensible defaults in a `terraform.tfvars` file.
+- Justify your architecture choice in the README: briefly explain why you chose
+  the architecture you did.
 
 ---
 
@@ -203,7 +188,7 @@ Other criteria for evaluation will be:
 ```
 .
 ├── app <-- app files/directories and Dockerfile go here
-└── terraform <-- Terraform files/directories go here (i.e. we will run `terraform plan`/`terraform apply` from here)
+└── terraform <-- Terraform/OpenTofu files go here (i.e. we will run `terraform plan`/`terraform apply` from here)
 ```
 
 ## Extra Credit!
@@ -214,16 +199,12 @@ THIS!**
 Are you an overachiever? Demonstrate your mastery of cloud-native IaC tooling by
 doing any of these:
 
-- Additional Terraform code to actually deploy the 'simpletimeservice' container
-  image to the EKS cluster.
-- Additional Terraform code to use the Helm provider and any public helm chart
-  to install any standard devops tooling (such as Prometheus).
-- Updates to the Kubernetes manifest to utilize best practices (e.g. pod CPU and
-  memory limits).
-- A sidecar container of some kind, such as fluentbit.
-- Code to initialize and use a remote Terraform backend (S3 and DynamoDB) for
-  state and locking instead of a local `.tfstate` file.
-- Create a simple CI/CD pipeline (Github Actions, Bitbucket Pipelines, GitLab
-  CI, etc.) to publish your container image to the container registry, and
-  commit the configuration to your solution repo.
+- Apply production-hardening best practices to your deployment (e.g. resource
+  limits, health checks, auto-scaling, pod disruption budgets).
+- Add a sidecar container of some kind, such as Fluent Bit.
+- Initialize and use a remote Terraform/OpenTofu backend for state and locking
+  instead of a local `.tfstate` file.
+- Create a simple CI/CD pipeline (GitHub Actions, Bitbucket Pipelines, GitLab
+  CI, etc.) to build and publish your container image, and commit the
+  configuration to your solution repo.
 - Anything else that might demonstrate that you know what's up.
