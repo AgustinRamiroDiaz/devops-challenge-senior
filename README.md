@@ -72,6 +72,18 @@ docker login
 make publish TAG=v1.0.0
 ```
 
+Alternatively, use the manually triggered **Build and publish Docker image**
+GitHub Actions workflow. Configure these repository secrets first:
+
+- `DOCKERHUB_USERNAME`: Docker Hub username with access to the repository.
+- `DOCKERHUB_TOKEN`: Docker Hub access token with permission to push images.
+
+Run the workflow from the GitHub Actions page and provide the desired
+`image_tag`, such as `v1.0.0`. It publishes that exact tag for `linux/amd64`,
+`linux/arm64`, and `linux/arm/v7` to
+`agustinramirodiaz/simpletimeservice`. The workflow only runs through manual
+dispatch; repository pushes and Git tags do not trigger it.
+
 ## Authenticate to Google Cloud
 
 Authenticate the Google Cloud CLI, then create Application Default Credentials for the Google provider:
