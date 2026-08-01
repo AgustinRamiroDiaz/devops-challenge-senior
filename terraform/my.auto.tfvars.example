@@ -1,1 +1,3 @@
-billing_account_id = "FILL_ME"
+# Optional override. When omitted, Terraform uses the first open billing
+# account returned by `gcloud billing accounts list`.
+billing_account_id = "000000-000000-000000"

@@ -1,11 +1,12 @@
 variable "billing_account_id" {
-  description = "Billing account to attach to the new project, in XXXXXX-XXXXXX-XXXXXX format."
+  description = "Billing account to attach to the new project. When empty, Terraform selects the first open account returned by gcloud."
   type        = string
+  default     = ""
   sensitive   = true
 
   validation {
-    condition     = can(regex("^[0-9A-Fa-f]{6}-[0-9A-Fa-f]{6}-[0-9A-Fa-f]{6}$", var.billing_account_id))
-    error_message = "billing_account_id must use the XXXXXX-XXXXXX-XXXXXX format."
+    condition     = var.billing_account_id == "" || can(regex("^[0-9A-Fa-f]{6}-[0-9A-Fa-f]{6}-[0-9A-Fa-f]{6}$", var.billing_account_id))
+    error_message = "billing_account_id must be empty or use the XXXXXX-XXXXXX-XXXXXX format."
   }
 }
 

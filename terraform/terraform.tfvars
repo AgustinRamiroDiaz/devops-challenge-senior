@@ -1,5 +1,5 @@
-# Account-specific billing_account_id is intentionally supplied through the
-# TF_VAR_billing_account_id environment variable or my.auto.tfvars file, instead of being committed.
+# billing_account_id is selected automatically from gcloud unless explicitly
+# supplied through TF_VAR_billing_account_id or a local .tfvars file.
 region               = "us-central1"
 project_id_prefix    = "agustinramirodiaz"
 image_repository     = "docker.io/agustinramirodiaz/simpletimeservice"

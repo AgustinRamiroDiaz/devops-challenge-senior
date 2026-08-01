@@ -74,19 +74,20 @@ make publish TAG=v1.0.0
 
 ## Authenticate to Google Cloud
 
-Create Application Default Credentials for Terraform:
+Authenticate the Google Cloud CLI, then create Application Default Credentials for the Google provider:
 
 ```bash
+gcloud auth login
 gcloud auth application-default login
 ```
 
-List the billing accounts available to the authenticated identity:
+By default, Terraform selects the first open billing account available to the authenticated `gcloud` identity. You can inspect which accounts are available:
 
 ```bash
 gcloud billing accounts list
 ```
 
-There are 2 ways of configuring this:
+No billing variable is required for the default path. To select a different account explicitly, use either of these overrides:
 
 1. Configure with a file
 
@@ -96,11 +97,11 @@ There are 2 ways of configuring this:
    cp terraform/my.auto.tfvars.example terraform/my.auto.tfvars
    ```
 
-   And then edit `terraform/my.auto.tfvars`
+   Then edit `terraform/my.auto.tfvars` with the desired account ID.
 
 2. Configure with environment variables
 
-   Export the chosen account ID and image tag. Environment variables keep account-specific data out of version control:
+   Export the chosen account ID. Environment variables keep account-specific data out of version control:
 
    ```bash
    export TF_VAR_billing_account_id="000000-000000-000000"
