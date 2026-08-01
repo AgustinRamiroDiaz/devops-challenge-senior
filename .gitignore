@@ -1,0 +1,13 @@
+# Terraform working directories and local state
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+
+# Local variable files can contain account-specific values.
+*.auto.tfvars
+*.auto.tfvars.json
+terraform/*.tfvars.json
+
