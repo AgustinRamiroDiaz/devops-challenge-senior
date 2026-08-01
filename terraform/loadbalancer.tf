@@ -20,6 +20,11 @@ resource "google_compute_region_backend_service" "simple_time_service" {
 
   backend {
     group = google_compute_region_network_endpoint_group.simple_time_service.id
+
+    # The Terraform Google provider requires a non-zero capacity scaler for
+    # EXTERNAL_MANAGED regional backends, even though GCP does not use capacity
+    # scaling for serverless NEGs.
+    capacity_scaler = 1.0
   }
 
   log_config {
