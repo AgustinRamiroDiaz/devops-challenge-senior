@@ -165,26 +165,6 @@ terraform destroy
 
 Terraform destroys the child resources and then schedules the entire project for deletion. Project deletion is initially recoverable in Google Cloud, so confirm the project is shut down and no billable resources remain.
 
-## Local development
+## Contributing
 
-Run the Go service directly:
-
-```bash
-cd app
-go test ./...
-go run .
-```
-
-In another terminal:
-
-```bash
-curl http://localhost:8080/
-```
-
-Build or run the local container from the repository root:
-
-```bash
-make build
-make run
-make build-and-run
-```
+See [Contributing.md](Contributing.md) for local development and automated check instructions.
