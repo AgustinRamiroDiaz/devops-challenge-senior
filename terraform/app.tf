@@ -21,7 +21,8 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
   template {
     service_account                  = google_service_account.runtime.email
     max_instance_request_concurrency = 80
-    execution_environment            = "EXECUTION_ENVIRONMENT_GEN1"
+    # We use gen 1 since it allows for smaller than 512Mi cpu, and also it has faster cold starts.
+    execution_environment = "EXECUTION_ENVIRONMENT_GEN1"
 
     scaling {
       min_instance_count = 0
