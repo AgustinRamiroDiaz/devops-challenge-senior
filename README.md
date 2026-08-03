@@ -14,7 +14,6 @@ flowchart LR
 
   subgraph project["GCP project"]
     subgraph vpc["VPC"]
-      workload_subnet["Private subnet<br/>10.10.0.0/24<br/>Cloud Run Direct VPC egress"]
       proxy_subnet["Proxy-only subnet<br/>10.10.1.0/24<br/>Regional managed proxy"]
     end
 
@@ -31,17 +30,21 @@ flowchart LR
     cloud_run["Cloud Run service<br/>Ingress: internal and Cloud Load Balancing only"]
   end
 
-  client --> ip --> forwarding_rule --> http_proxy --> url_map --> backend --> neg --> cloud_run
+  client --> ip --> forwarding_rule --> http_proxy --> url_map --> backend --> neg
+  neg -- "Google-managed serverless routing" --> cloud_run
   proxy_subnet -. "Google-managed ALB proxies" .- alb
-  cloud_run -. "Direct VPC egress<br/>private ranges only" .- workload_subnet
 ```
 
-Terraform creates a custom VPC with two regional subnets in `us-central1`:
+Terraform creates a custom VPC with `lb-proxy-subnet`, a regional proxy-only
+subnet reserved for Google-managed load-balancer proxies.
 
-- `cloud-run-subnet` provides private addresses for Cloud Run Direct VPC egress.
-- `lb-proxy-subnet` is reserved for Google-managed regional load-balancer proxies.
-
-GCP subnets span all zones in their region, so separate per-zone subnets are not needed for availability. The Cloud Run default URL is disabled and its ingress setting accepts external traffic only through Cloud Load Balancing. A serverless NEG uses Google-managed routing, so no VPC firewall rule is required between the load balancer and Cloud Run.
+Cloud Run and the serverless NEG are managed Google Cloud resources rather than
+VMs placed inside a VPC subnet. The backend hop uses private Google-managed
+routing outside the VPC firewall path. Because this service does not initiate
+connections to private VPC resources, it does not need Direct VPC egress or a
+workload subnet. The Cloud Run default URL is disabled and its ingress setting
+accepts external traffic only through Cloud Load Balancing, so the load
+balancer remains the only public path to the container.
 
 This design keeps the service and networking operationally small, scales the application to zero when idle, and gives the public endpoint a stable IP.
 
@@ -71,7 +74,7 @@ The public image must exist before Terraform deploys Cloud Run. I've already mad
 
 ```bash
 docker login
-make publish TAG=v1.0.0
+make publish TAG=v1.0.2
 ```
 
 Alternatively, use the manually triggered **Build and publish Docker image**

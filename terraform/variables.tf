@@ -44,17 +44,6 @@ variable "image_tag" {
   }
 }
 
-variable "workload_subnet_cidr" {
-  description = "Primary IPv4 range used by Cloud Run Direct VPC egress."
-  type        = string
-  default     = "10.10.0.0/24"
-
-  validation {
-    condition     = can(cidrnetmask(var.workload_subnet_cidr))
-    error_message = "workload_subnet_cidr must be a valid IPv4 CIDR range."
-  }
-}
-
 variable "proxy_subnet_cidr" {
   description = "Primary IPv4 range reserved for regional managed load-balancer proxies."
   type        = string

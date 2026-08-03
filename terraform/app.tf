@@ -29,15 +29,6 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
       max_instance_count = 3
     }
 
-    vpc_access {
-      egress = "PRIVATE_RANGES_ONLY"
-
-      network_interfaces {
-        network    = google_compute_network.simple_time_service.name
-        subnetwork = google_compute_subnetwork.cloud_run.name
-      }
-    }
-
     containers {
       image = "${var.image_repository}:${var.image_tag}"
 

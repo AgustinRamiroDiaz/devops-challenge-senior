@@ -9,16 +9,6 @@ resource "google_compute_network" "simple_time_service" {
   depends_on = [google_project_service.required]
 }
 
-resource "google_compute_subnetwork" "cloud_run" {
-  project = google_project.simple_time_service.project_id
-  name    = "cloud-run-subnet"
-  region  = var.region
-  network = google_compute_network.simple_time_service.id
-
-  ip_cidr_range = var.workload_subnet_cidr
-  stack_type    = "IPV4_ONLY"
-}
-
 resource "google_compute_subnetwork" "load_balancer_proxy" {
   project = google_project.simple_time_service.project_id
   name    = "lb-proxy-subnet"
