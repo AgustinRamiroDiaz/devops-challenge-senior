@@ -44,3 +44,20 @@ func TestUnknownPathReturnsNotFound(t *testing.T) {
 		t.Fatalf("expected status 404, got %d", recorder.Code)
 	}
 }
+
+func TestHealthReturnsOK(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	recorder := httptest.NewRecorder()
+
+	routes().ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+	if got := recorder.Header().Get("Content-Type"); got != "text/plain; charset=utf-8" {
+		t.Fatalf("expected plain-text content type, got %q", got)
+	}
+	if got := recorder.Body.String(); got != "ok\n" {
+		t.Fatalf("expected health response %q, got %q", "ok\n", got)
+	}
+}

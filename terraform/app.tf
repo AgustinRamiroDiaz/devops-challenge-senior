@@ -46,6 +46,18 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
         container_port = 8080
       }
 
+      liveness_probe {
+        initial_delay_seconds = 0
+        timeout_seconds       = 1
+        period_seconds        = 10
+        failure_threshold     = 3
+
+        http_get {
+          path = "/healthz"
+          port = 8080
+        }
+      }
+
       resources {
         cpu_idle = true
         limits = {

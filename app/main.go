@@ -53,8 +53,15 @@ func main() {
 
 func routes() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", handleHealth)
 	mux.HandleFunc("/", handleTime)
 	return mux
+}
+
+func handleHealth(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok\n"))
 }
 
 func handleTime(w http.ResponseWriter, r *http.Request) {
