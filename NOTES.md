@@ -12,11 +12,11 @@ Using a flat structure has the benefits of:
 ## Pin deployed images by digest
 
 Cloud Run deploys the image using its immutable OCI manifest digest rather
-than a mutable tag. The published `v1.0.3` multi-platform image currently
+than a mutable tag. The published `v1.0.5` multi-platform image currently
 resolves to:
 
 ```text
-docker.io/agustinramirodiaz/simpletimeservice@sha256:4353a100455343231e916f411a1adb3293bd564932b42348c8df8164fcc79346
+docker.io/agustinramirodiaz/simpletimeservice@sha256:bdf79b9093125a9dc77ea354b87b1f79f3ca35ad935d04b2a89819e2e34ff79d
 ```
 
 Tags remain useful for publishing and discovering releases, but a registry
@@ -27,7 +27,7 @@ After publishing a new release, resolve its multi-platform manifest digest:
 
 ```bash
 docker buildx imagetools inspect \
-  docker.io/agustinramirodiaz/simpletimeservice:v1.0.3
+  docker.io/agustinramirodiaz/simpletimeservice:v1.0.5
 ```
 
 Update `image_digest` in `terraform/terraform.tfvars` with the reported
@@ -166,6 +166,7 @@ for role in \
   roles/iam.serviceAccountAdmin \
   roles/iam.serviceAccountUser \
   roles/resourcemanager.projectIamAdmin \
+  roles/monitoring.dashboardEditor \
   roles/secretmanager.admin \
   roles/serviceusage.serviceUsageAdmin
 do
@@ -186,7 +187,9 @@ gcloud billing accounts add-iam-policy-binding "$BILLING_ACCOUNT_ID" \
 The `roles/resourcemanager.projectIamAdmin` grant lets Terraform attach the
 runtime service account's `roles/monitoring.metricWriter` binding. The
 `roles/secretmanager.admin` grant lets Terraform create and mount the
-OpenTelemetry Collector configuration secret.
+OpenTelemetry Collector configuration secret. The
+`roles/monitoring.dashboardEditor` grant lets Terraform manage the application
+dashboard without granting broader Monitoring administration permissions.
 
 Create a provider that accepts tokens only from this immutable repository ID,
 then allow all repository refs to impersonate the read-only identity while only

@@ -34,6 +34,7 @@ flowchart LR
     end
 
     observability["Google Cloud Observability<br/>Managed Service for Prometheus"]
+    dashboard["Cloud Monitoring dashboard<br/>RED metrics"]
     secret["Secret Manager<br/>Collector config"]
   end
 
@@ -42,6 +43,7 @@ flowchart LR
   proxy_subnet -. "Google-managed ALB proxies" .- alb
   secret -. "mounted at startup" .-> otel
   otel -- "batched metrics export" --> observability
+  observability --> dashboard
 ```
 
 Terraform creates a custom VPC with `lb-proxy-subnet`, a regional proxy-only
@@ -61,6 +63,9 @@ and sends them to the `otel-collector` sidecar over localhost. The sidecar uses
 Google's OpenTelemetry Collector image, reads its configuration from Secret
 Manager, batches/enriches metrics with Cloud Run metadata, and exports them to
 Google Cloud Observability.
+
+Terraform also provisions a Cloud Monitoring dashboard for request rate,
+HTTP errors, latency percentiles, routes, and response status codes.
 
 This design keeps the service and networking operationally small, scales the application to zero when idle, and gives the public endpoint a stable IP.
 
@@ -92,7 +97,7 @@ release before updating `terraform/terraform.tfvars` with the new image digest:
 
 ```bash
 docker login
-make publish TAG=v1.0.4
+make publish TAG=v1.0.5
 ```
 
 Alternatively, use the manually triggered **Build and publish Docker image**
