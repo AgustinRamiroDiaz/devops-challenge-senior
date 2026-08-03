@@ -3,6 +3,7 @@ locals {
   billing_account_id = var.billing_account_id != "" ? var.billing_account_id : data.external.gcloud_billing_account[0].result.billing_account_id
 
   required_services = toset([
+    "billingbudgets.googleapis.com",
     "compute.googleapis.com",
     "iam.googleapis.com",
     "monitoring.googleapis.com",

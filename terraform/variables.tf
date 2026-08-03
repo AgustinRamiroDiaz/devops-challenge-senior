@@ -16,6 +16,17 @@ variable "region" {
   default     = "us-central1"
 }
 
+variable "monthly_budget_amount" {
+  description = "Monthly project budget in whole units of the billing account's currency."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.monthly_budget_amount > 0 && floor(var.monthly_budget_amount) == var.monthly_budget_amount
+    error_message = "monthly_budget_amount must be a positive whole number."
+  }
+}
+
 variable "project_id_prefix" {
   description = "Prefix for the globally unique project ID. Terraform appends six hexadecimal characters."
   type        = string

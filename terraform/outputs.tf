@@ -13,3 +13,7 @@ output "service_url" {
   value       = "http://${google_compute_address.simple_time_service.address}"
 }
 
+output "billing_budget_name" {
+  description = "Resource name of the project-scoped monthly billing budget."
+  value       = google_billing_budget.simple_time_service.name
+}

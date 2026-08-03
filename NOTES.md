@@ -54,6 +54,19 @@ The runtime service account only receives the permissions needed for this
 pattern: `roles/secretmanager.secretAccessor` on the Collector config secret
 and `roles/monitoring.metricWriter` on the project.
 
+## Billing budget alerts
+
+Terraform creates a monthly alert-only budget covering all costs attributed to
+the project. `monthly_budget_amount` defaults to 10 whole units in the billing
+account's currency. Project owners receive actual-spend alerts at 50%, 80%, and
+100%, plus a forecasted-spend alert at 100%.
+
+This budget is not an enforceable spending cap. Google's Preview Spend Cap
+Budgets are currently configured through the Cloud Billing console and aren't
+exposed by the public Budget API or Terraform provider. Keeping this budget
+project-wide ensures that it includes Cloud Run, the load balancer, Monitoring,
+Secret Manager, and other project costs.
+
 # Current design is a bit excessive
 
 A custom load balancer and public IP is really not needed for this simple app, since we could simply use Google's Front End (GFE). But given that the requirements I've opted for using the load balancer with public static IP.
@@ -182,6 +195,10 @@ gcloud storage buckets add-iam-policy-binding "gs://$STATE_BUCKET" \
 gcloud billing accounts add-iam-policy-binding "$BILLING_ACCOUNT_ID" \
   --member="serviceAccount:terraform-apply@$APP_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/billing.user"
+
+gcloud billing accounts add-iam-policy-binding "$BILLING_ACCOUNT_ID" \
+  --member="serviceAccount:terraform-apply@$APP_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/billing.costsManager"
 ```
 
 The `roles/resourcemanager.projectIamAdmin` grant lets Terraform attach the
@@ -189,7 +206,10 @@ runtime service account's `roles/monitoring.metricWriter` binding. The
 `roles/secretmanager.admin` grant lets Terraform create and mount the
 OpenTelemetry Collector configuration secret. The
 `roles/monitoring.dashboardEditor` grant lets Terraform manage the application
-dashboard without granting broader Monitoring administration permissions.
+dashboard without granting broader Monitoring administration permissions. The
+`roles/billing.costsManager` grant lets it manage the project-scoped billing
+budget; `roles/billing.user` is still required to attach the project to the
+billing account.
 
 Create a provider that accepts tokens only from this immutable repository ID,
 then allow all repository refs to impersonate the read-only identity while only
