@@ -16,6 +16,8 @@ import (
 
 const defaultPort = "8080"
 
+const gracefulShutdownTimeout = 8 * time.Second
+
 type response struct {
 	Timestamp string `json:"timestamp"`
 	IP        string `json:"ip"`
@@ -37,18 +39,41 @@ func main() {
 	shutdownSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	slog.Info("SimpleTimeService listening", "port", port)
+	serverError := make(chan error, 1)
 	go func() {
-		<-shutdownSignal.Done()
-		if err := server.Close(); err != nil {
-			slog.Error("failed to stop server", "error", err)
-		}
+		serverError <- server.ListenAndServe()
 	}()
 
-	slog.Info("SimpleTimeService listening", "port", port)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	select {
+	case err := <-serverError:
+		if err == nil || errors.Is(err, http.ErrServerClosed) {
+			return
+		}
+		slog.Error("server stopped unexpectedly", "error", err)
+		os.Exit(1)
+	case <-shutdownSignal.Done():
+		slog.Info("shutdown signal received")
+	}
+
+	if err := shutdownServer(server); err != nil {
+		slog.Error("graceful shutdown failed; forced active connections closed", "error", err)
+	}
+
+	if err := <-serverError; err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("server stopped unexpectedly", "error", err)
 		os.Exit(1)
 	}
+}
+
+func shutdownServer(server *http.Server) error {
+	shutdownContext, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownContext); err != nil {
+		return errors.Join(err, server.Close())
+	}
+	return nil
 }
 
 func routes() http.Handler {

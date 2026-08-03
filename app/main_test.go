@@ -61,3 +61,46 @@ func TestHealthReturnsOK(t *testing.T) {
 		t.Fatalf("expected health response %q, got %q", "ok\n", got)
 	}
 }
+
+func TestShutdownWaitsForActiveRequest(t *testing.T) {
+	requestStarted := make(chan struct{})
+	finishRequest := make(chan struct{})
+
+	testServer := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		close(requestStarted)
+		<-finishRequest
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	testServer.Start()
+	t.Cleanup(testServer.Close)
+
+	requestDone := make(chan error, 1)
+	go func() {
+		response, err := testServer.Client().Get(testServer.URL)
+		if err == nil {
+			_ = response.Body.Close()
+		}
+		requestDone <- err
+	}()
+
+	<-requestStarted
+	shutdownDone := make(chan error, 1)
+	go func() {
+		shutdownDone <- shutdownServer(testServer.Config)
+	}()
+
+	select {
+	case err := <-shutdownDone:
+		t.Fatalf("shutdown returned before the active request completed: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(finishRequest)
+
+	if err := <-requestDone; err != nil {
+		t.Fatalf("active request failed during graceful shutdown: %v", err)
+	}
+	if err := <-shutdownDone; err != nil {
+		t.Fatalf("graceful shutdown failed: %v", err)
+	}
+}
