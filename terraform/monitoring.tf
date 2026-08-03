@@ -17,7 +17,9 @@ resource "google_monitoring_dashboard" "simple_time_service" {
               timeSeriesQuery = {
                 prometheusQuery = "sum(rate(simple_time_requests_total[5m]))"
               }
-              sparkChartType = "SPARK_LINE"
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
             }
           }
         },
@@ -32,7 +34,9 @@ resource "google_monitoring_dashboard" "simple_time_service" {
               timeSeriesQuery = {
                 prometheusQuery = "100 * (sum(rate(simple_time_requests_total{http_response_status_code=~\"5..\"}[5m])) or vector(0)) / clamp_min((sum(rate(simple_time_requests_total[5m])) or vector(0)), 0.001)"
               }
-              sparkChartType = "SPARK_LINE"
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
               thresholds = [
                 {
                   value     = 1
@@ -59,7 +63,9 @@ resource "google_monitoring_dashboard" "simple_time_service" {
               timeSeriesQuery = {
                 prometheusQuery = "histogram_quantile(0.95, sum by (le) (rate(simple_time_request_duration_ms_milliseconds_bucket[5m])))"
               }
-              sparkChartType = "SPARK_LINE"
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
             }
           }
         },
