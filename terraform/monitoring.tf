@@ -7,8 +7,6 @@ resource "google_monitoring_dashboard" "simple_time_service" {
       columns = 12
       tiles = [
         {
-          xPos   = 0
-          yPos   = 0
           width  = 4
           height = 4
           widget = {
@@ -25,7 +23,6 @@ resource "google_monitoring_dashboard" "simple_time_service" {
         },
         {
           xPos   = 4
-          yPos   = 0
           width  = 4
           height = 4
           widget = {
@@ -54,7 +51,6 @@ resource "google_monitoring_dashboard" "simple_time_service" {
         },
         {
           xPos   = 8
-          yPos   = 0
           width  = 4
           height = 4
           widget = {
@@ -70,7 +66,6 @@ resource "google_monitoring_dashboard" "simple_time_service" {
           }
         },
         {
-          xPos   = 0
           yPos   = 4
           width  = 6
           height = 5
@@ -124,7 +119,6 @@ resource "google_monitoring_dashboard" "simple_time_service" {
           }
         },
         {
-          xPos   = 0
           yPos   = 9
           width  = 12
           height = 5
