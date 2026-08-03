@@ -6,7 +6,7 @@ ARG TARGETARCH
 ARG TARGETVARIANT
 
 WORKDIR /src
-COPY go.mod ./
+COPY go.mod go.sum ./
 COPY main.go ./
 RUN CGO_ENABLED=0 \
     GOOS=$TARGETOS \

@@ -5,7 +5,9 @@ locals {
   required_services = toset([
     "compute.googleapis.com",
     "iam.googleapis.com",
+    "monitoring.googleapis.com",
     "run.googleapis.com",
+    "secretmanager.googleapis.com",
     "serviceusage.googleapis.com",
   ])
 }

@@ -36,6 +36,24 @@ top-level `Digest`, not one of the per-platform manifest digests listed under
 the `linux/amd64` image variant. The variable validation rejects tags and
 malformed digests.
 
+## OpenTelemetry Collector sidecar
+
+The Cloud Run service includes an `otel-collector` sidecar to demonstrate a
+real multi-container pattern without exposing another public endpoint. The app
+container is still the only ingress container on port `8080`; it exports OTLP
+metrics to `localhost:4317`, and the Collector batches and exports those
+metrics to Google Cloud Managed Service for Prometheus.
+
+The Collector config is stored in Secret Manager and mounted into the sidecar
+as `/etc/otelcol-google/config.yaml`. The config is not secret, but Secret
+Manager is the supported Cloud Run mechanism for mounting small configuration
+files without building a second custom image. Because Terraform manages the
+secret version, the config content is present in Terraform state.
+
+The runtime service account only receives the permissions needed for this
+pattern: `roles/secretmanager.secretAccessor` on the Collector config secret
+and `roles/monitoring.metricWriter` on the project.
+
 # Current design is a bit excessive
 
 A custom load balancer and public IP is really not needed for this simple app, since we could simply use Google's Front End (GFE). But given that the requirements I've opted for using the load balancer with public static IP.
@@ -123,6 +141,10 @@ gcloud projects add-iam-policy-binding "$APP_PROJECT_ID" \
   --member="serviceAccount:terraform-plan@$APP_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/serviceusage.serviceUsageConsumer"
 
+gcloud projects add-iam-policy-binding "$APP_PROJECT_ID" \
+  --member="serviceAccount:terraform-plan@$APP_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.viewer"
+
 gcloud storage buckets add-iam-policy-binding "gs://$STATE_BUCKET" \
   --member="serviceAccount:terraform-plan@$APP_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.objectViewer"
@@ -143,6 +165,8 @@ for role in \
   roles/run.admin \
   roles/iam.serviceAccountAdmin \
   roles/iam.serviceAccountUser \
+  roles/resourcemanager.projectIamAdmin \
+  roles/secretmanager.admin \
   roles/serviceusage.serviceUsageAdmin
 do
   gcloud projects add-iam-policy-binding "$APP_PROJECT_ID" \
@@ -158,6 +182,11 @@ gcloud billing accounts add-iam-policy-binding "$BILLING_ACCOUNT_ID" \
   --member="serviceAccount:terraform-apply@$APP_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/billing.user"
 ```
+
+The `roles/resourcemanager.projectIamAdmin` grant lets Terraform attach the
+runtime service account's `roles/monitoring.metricWriter` binding. The
+`roles/secretmanager.admin` grant lets Terraform create and mount the
+OpenTelemetry Collector configuration secret.
 
 Create a provider that accepts tokens only from this immutable repository ID,
 then allow all repository refs to impersonate the read-only identity while only

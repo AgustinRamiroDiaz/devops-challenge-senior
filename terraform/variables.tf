@@ -36,7 +36,7 @@ variable "image_repository" {
 variable "image_digest" {
   description = "Immutable multi-platform container image digest deployed to Cloud Run."
   type        = string
-  default     = "sha256:4353a100455343231e916f411a1adb3293bd564932b42348c8df8164fcc79346"
+  default     = "sha256:404aa5e856c08fcefd87906ae625eb316cad9c919910e82f6e0db89873869c95"
 
   validation {
     condition     = can(regex("^sha256:[0-9a-f]{64}$", var.image_digest))

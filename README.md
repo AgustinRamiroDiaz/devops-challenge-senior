@@ -27,12 +27,21 @@ flowchart LR
     end
 
     neg["Serverless NEG"]
-    cloud_run["Cloud Run service<br/>Ingress: internal and Cloud Load Balancing only"]
+    subgraph cloud_run["Cloud Run service<br/>Ingress: internal and Cloud Load Balancing only"]
+      app["App container<br/>SimpleTimeService<br/>:8080"]
+      otel["Sidecar container<br/>OpenTelemetry Collector<br/>OTLP :4317/:4318"]
+      app -- "OTLP metrics over localhost" --> otel
+    end
+
+    observability["Google Cloud Observability<br/>Managed Service for Prometheus"]
+    secret["Secret Manager<br/>Collector config"]
   end
 
   client --> ip --> forwarding_rule --> http_proxy --> url_map --> backend --> neg
-  neg -- "Google-managed serverless routing" --> cloud_run
+  neg -- "Google-managed serverless routing" --> app
   proxy_subnet -. "Google-managed ALB proxies" .- alb
+  secret -. "mounted at startup" .-> otel
+  otel -- "batched metrics export" --> observability
 ```
 
 Terraform creates a custom VPC with `lb-proxy-subnet`, a regional proxy-only
@@ -45,6 +54,13 @@ connections to private VPC resources, it does not need Direct VPC egress or a
 workload subnet. The Cloud Run default URL is disabled and its ingress setting
 accepts external traffic only through Cloud Load Balancing, so the load
 balancer remains the only public path to the container.
+
+The Cloud Run revision uses two containers in the same service instance. The
+`app` container handles requests, records a small set of OpenTelemetry metrics,
+and sends them to the `otel-collector` sidecar over localhost. The sidecar uses
+Google's OpenTelemetry Collector image, reads its configuration from Secret
+Manager, batches/enriches metrics with Cloud Run metadata, and exports them to
+Google Cloud Observability.
 
 This design keeps the service and networking operationally small, scales the application to zero when idle, and gives the public endpoint a stable IP.
 
@@ -59,6 +75,7 @@ Useful docs:
 
 - https://docs.cloud.google.com/load-balancing/docs/https/setting-up-reg-ext-https-serverless
 - https://docs.cloud.google.com/run/docs/securing/private-networking
+- https://docs.cloud.google.com/stackdriver/docs/instrumentation/opentelemetry-collector-cloud-run
 
 ## Prerequisites
 
@@ -70,11 +87,12 @@ Useful docs:
   - Project Creator (`roles/resourcemanager.projectCreator`)
   - Billing Account User (`roles/billing.user`) on the billing account
 
-The public image must exist before Terraform deploys Cloud Run. I've already made the necessary release with:
+The public image must exist before Terraform deploys Cloud Run. Publish a
+release before updating `terraform/terraform.tfvars` with the new image digest:
 
 ```bash
 docker login
-make publish TAG=v1.0.2
+make publish TAG=v1.0.4
 ```
 
 Alternatively, use the manually triggered **Build and publish Docker image**
