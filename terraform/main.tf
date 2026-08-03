@@ -21,6 +21,10 @@ resource "google_project" "simple_time_service" {
 
   auto_create_network = false
   deletion_policy     = "DELETE"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_project_service" "required" {
