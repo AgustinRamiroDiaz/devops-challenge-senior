@@ -158,13 +158,14 @@ func handleTime(w http.ResponseWriter, r *http.Request) {
 }
 
 func visitorIP(r *http.Request) string {
-	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-		if ip := strings.TrimSpace(strings.Split(forwarded, ",")[0]); ip != "" {
-			return ip
-		}
+	// The ALB overwrites this header with its sanitized client_ip_address value.
+	if ip := validHeaderIP(r.Header.Get("X-Client-IP")); ip != "" {
+		return ip
 	}
-	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
-		return realIP
+
+	// Local development fallbacks only; client-supplied proxy headers are spoofable.
+	if ip := firstForwardedIP(r.Header.Get("X-Forwarded-For")); ip != "" {
+		return ip
 	}
 
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -172,6 +173,21 @@ func visitorIP(r *http.Request) string {
 		return host
 	}
 	return r.RemoteAddr
+}
+
+func validHeaderIP(value string) string {
+	ip := net.ParseIP(strings.TrimSpace(value))
+	if ip == nil {
+		return ""
+	}
+	return ip.String()
+}
+
+func firstForwardedIP(value string) string {
+	if value == "" {
+		return ""
+	}
+	return validHeaderIP(strings.Split(value, ",")[0])
 }
 
 func instrumentRequests(next http.Handler) http.Handler {

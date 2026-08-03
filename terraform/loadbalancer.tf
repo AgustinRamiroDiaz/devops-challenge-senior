@@ -39,6 +39,24 @@ resource "google_compute_region_url_map" "simple_time_service" {
   region  = var.region
 
   default_service = google_compute_region_backend_service.simple_time_service.id
+
+  host_rule {
+    hosts        = ["*"]
+    path_matcher = "all-paths"
+  }
+
+  path_matcher {
+    name            = "all-paths"
+    default_service = google_compute_region_backend_service.simple_time_service.id
+
+    header_action {
+      request_headers_to_add {
+        header_name  = "X-Client-IP"
+        header_value = "{client_ip_address}"
+        replace      = true
+      }
+    }
+  }
 }
 
 resource "google_compute_region_target_http_proxy" "simple_time_service" {

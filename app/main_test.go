@@ -10,7 +10,8 @@ import (
 
 func TestRootReturnsTimestampAndVisitorIP(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
-	request.Header.Set("X-Forwarded-For", "203.0.113.10, 10.0.0.1")
+	request.Header.Set("X-Client-IP", "203.0.113.10")
+	request.Header.Set("X-Forwarded-For", "198.51.100.20, 10.0.0.1")
 	recorder := httptest.NewRecorder()
 
 	routes().ServeHTTP(recorder, request)
@@ -31,6 +32,26 @@ func TestRootReturnsTimestampAndVisitorIP(t *testing.T) {
 	}
 	if _, err := time.Parse(time.RFC3339Nano, body.Timestamp); err != nil {
 		t.Errorf("expected RFC3339 timestamp, got %q: %v", body.Timestamp, err)
+	}
+}
+
+func TestVisitorIPFallsBackToForwardedHeaderForLocalDevelopment(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Set("X-Forwarded-For", "198.51.100.20, 10.0.0.1")
+
+	if got := visitorIP(request); got != "198.51.100.20" {
+		t.Fatalf("expected forwarded visitor IP fallback, got %q", got)
+	}
+}
+
+func TestVisitorIPIgnoresInvalidClientHeaders(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.RemoteAddr = "192.0.2.40:12345"
+	request.Header.Set("X-Client-IP", "not-an-ip")
+	request.Header.Set("X-Forwarded-For", "still-not-an-ip")
+
+	if got := visitorIP(request); got != "192.0.2.40" {
+		t.Fatalf("expected remote address fallback, got %q", got)
 	}
 }
 
