@@ -54,6 +54,21 @@ The runtime service account only receives the permissions needed for this
 pattern: `roles/secretmanager.secretAccessor` on the Collector config secret
 and `roles/monitoring.metricWriter` on the project.
 
+## Continuous-worker stress test
+
+The stress test uses persistent workers that send requests continuously over
+reused HTTP connections. This creates a steadier Cloud Run concurrency signal
+than synchronized request rounds and avoids measuring a new TCP connection on
+every request. The controller starts 80 workers, adds another 80 every five
+seconds, and allows up to 1,000 workers by default. It cancels the load as soon
+as responses identify three distinct Cloud Run instances.
+
+In the validation run, the service reached three instances after 12.1 seconds
+with 240 active workers, 7,276 successful requests, no errors, and approximately
+601 requests per second. The 1,000-worker ceiling was not reached; it remains a
+safety limit that gives slower or fully cold deployments room to apply more
+pressure before the 90-second timeout.
+
 ## Billing budget alerts
 
 Terraform creates a monthly alert-only budget covering all costs attributed to
