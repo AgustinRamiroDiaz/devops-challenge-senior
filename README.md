@@ -131,9 +131,31 @@ Run Terraform from the `terraform` directory:
 ```bash
 cd terraform
 terraform init
-terraform plan
-terraform apply
+terraform plan -out=simple-time-service.tfplan
 ```
+
+Review the saved plan before applying it:
+
+```bash
+terraform show simple-time-service.tfplan
+```
+
+Then apply that exact plan:
+
+```bash
+terraform apply simple-time-service.tfplan
+```
+
+Saving the plan ensures that `terraform apply` executes the same changes that
+were reviewed, instead of recalculating a potentially different plan. If the
+configuration, variables, provider selections, credentials, or existing
+infrastructure change after the plan is created, discard it and generate a new
+one before applying.
+
+Saved plan files can contain sensitive configuration and state data. Keep them
+local, do not share or commit them, and remove them when they are no longer
+needed. Files ending in `.tfplan` are already excluded by this repository's
+`.gitignore`.
 
 The first apply creates a project named `agustinramirodiaz-<random-hex>`, links it to the billing account, enables the required APIs, and deploys all networking and application resources. Internal resources use stable descriptive names; only the globally unique project ID has a random suffix.
 
