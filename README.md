@@ -125,6 +125,46 @@ gcloud auth login
 gcloud auth application-default login
 ```
 
+### Configure an ADC quota project
+
+The Terraform configuration manages a Cloud Billing budget. The Billing Budget
+API requires user Application Default Credentials to have a quota project. This
+quota project identifies the project that consumes API quota; it does not
+change where Terraform creates SimpleTimeService resources or which billing
+account the budget monitors.
+
+For a first deployment, select an existing Google Cloud project available to
+your account, enable the API there, and attach it to ADC:
+
+```bash
+export GCP_QUOTA_PROJECT_ID="my-existing-bootstrap-project"
+
+gcloud services enable billingbudgets.googleapis.com \
+  --project="$GCP_QUOTA_PROJECT_ID"
+
+gcloud auth application-default set-quota-project \
+  "$GCP_QUOTA_PROJECT_ID"
+```
+
+Your identity needs `serviceusage.services.use` on that project, normally
+provided by Service Usage Consumer (`roles/serviceusage.serviceUsageConsumer`).
+Enabling the API also requires permission to manage project services. Because
+Terraform creates the SimpleTimeService project, a fresh deployment cannot use
+that new project as its quota project before the first apply.
+
+For an existing deployment, the Terraform-created project can be used instead:
+
+```bash
+export GCP_QUOTA_PROJECT_ID="$(terraform -chdir=terraform output -raw project_id)"
+
+gcloud auth application-default set-quota-project \
+  "$GCP_QUOTA_PROJECT_ID"
+```
+
+The required API is already enabled in that project by Terraform. If a plan
+fails with `billingbudgets.googleapis.com API requires a quota project`, run the
+appropriate command above and retry the plan.
+
 By default, Terraform selects the first open billing account available to the authenticated `gcloud` identity. You can inspect which accounts are available:
 
 ```bash
