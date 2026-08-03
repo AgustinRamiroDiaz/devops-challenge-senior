@@ -7,7 +7,7 @@ ARG TARGETVARIANT
 
 WORKDIR /src
 COPY go.mod go.sum ./
-COPY main.go ./
+COPY main.go telemetry.go ./
 RUN CGO_ENABLED=0 \
     GOOS=$TARGETOS \
     GOARCH=$TARGETARCH \
