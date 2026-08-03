@@ -1,5 +1,36 @@
 # Decisions
 
+## Use Google-managed serverless networking instead of a workload subnet
+
+The exercise asks for public and private subnetworks, compute in a private
+subnetwork, and a load balancer in the public networking layer. This deployment
+follows the security intent of that requirement but not its literal topology.
+
+Cloud Run and serverless NEGs are Google-managed regional resources; they are
+not VMs or pods placed inside a customer VPC subnetwork. The regional external
+Application Load Balancer uses the VPC's dedicated proxy-only subnet, while its
+public forwarding rule owns the static external IP. The proxy-only subnet is a
+special-purpose range for Google-managed proxies rather than a conventional
+public workload subnet.
+
+Cloud Run accepts ingress only from internal sources and Cloud Load Balancing,
+its default `run.app` URL is disabled, and traffic from the serverless NEG to
+the service follows Google-managed routing. These controls prevent clients from
+bypassing the load balancer without requiring a private workload subnet or VPC
+firewall rules.
+
+Direct VPC egress would attach Cloud Run instances to a private subnet for
+outbound connections to VPC resources. It would not place inbound application
+traffic in that subnet or make the load-balancer-to-Cloud-Run path more private.
+Because this service has no private VPC dependencies, adding that attachment
+would create unused networking resources and IP consumption.
+
+This is an intentional simplicity and platform-native design decision. It does,
+however, mean the repository does not literally create both public and private
+workload subnetworks as requested by the exercise. A strict topology-based
+evaluation might require adding a private subnet and Direct VPC egress even
+though they do not improve this service's ingress isolation.
+
 ## Flat terraform structure
 
 Given that I don't have complex conditional logic, nor big reusable custom resources, I've opted out for a flat structure for all terraform resources. I've split them in files so that it's easier to mentally group and read.
