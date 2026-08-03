@@ -2,6 +2,8 @@
 
 SimpleTimeService is a minimal Go web service that returns the current UTC time and the visitor's IP address as JSON. This repository builds the application as a small, non-root container and deploys it to a Terraform-managed Google Cloud project.
 
+This repo is the solution to the [tech exercise](EXERCISE.md) of Particle41
+
 ## Architecture
 
 The deployment uses a regional external Application Load Balancer in front of a Cloud Run service:
