@@ -56,6 +56,8 @@ resource "google_compute_address" "simple_time_service" {
 
   address_type = "EXTERNAL"
   network_tier = "STANDARD"
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_compute_forwarding_rule" "simple_time_service" {
@@ -69,4 +71,6 @@ resource "google_compute_forwarding_rule" "simple_time_service" {
   ip_address            = google_compute_address.simple_time_service.id
   port_range            = "80"
   target                = google_compute_region_target_http_proxy.simple_time_service.id
+
+  depends_on = [google_compute_subnetwork.load_balancer_proxy]
 }
