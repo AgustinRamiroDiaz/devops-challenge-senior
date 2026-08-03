@@ -30,7 +30,7 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
     }
 
     containers {
-      image = "${var.image_repository}:${var.image_tag}"
+      image = "${var.image_repository}@${var.image_digest}"
 
       ports {
         name           = "http1"

@@ -9,6 +9,30 @@ Using a flat structure has the benefits of:
 - less code and it's less error prone, since variables and outputs take a lot of space and are places where it's easy to missconfig.
 - easier to read, since there are no custom modules with my own defined variables. By using standard terraform modules like `google`, everyone can read the resources and the code is familiar.
 
+## Pin deployed images by digest
+
+Cloud Run deploys the image using its immutable OCI manifest digest rather
+than a mutable tag. The published `v1.0.2` multi-platform image currently
+resolves to:
+
+```text
+docker.io/agustinramirodiaz/simpletimeservice@sha256:73e6c8742e31d45414d6b58beb3ecbbf51b971ff5973b1d332aae1a48d3c7cf7
+```
+
+Tags remain useful for publishing and discovering releases, but a registry
+owner can move a tag to different content. A digest makes Terraform revisions
+reproducible and ensures an apply deploys the image that was reviewed.
+
+After publishing a new release, resolve its multi-platform manifest digest:
+
+```bash
+docker buildx imagetools inspect \
+  docker.io/agustinramirodiaz/simpletimeservice:v1.0.2
+```
+
+Update `image_digest` in `terraform/terraform.tfvars` with the reported
+top-level digest. The variable validation rejects tags and malformed digests.
+
 # Current design is a bit excessive
 
 A custom load balancer and public IP is really not needed for this simple app, since we could simply use Google's Front End (GFE). But given that the requirements I've opted for using the load balancer with public static IP.

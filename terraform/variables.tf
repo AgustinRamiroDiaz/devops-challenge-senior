@@ -33,14 +33,14 @@ variable "image_repository" {
   default     = "docker.io/agustinramirodiaz/simpletimeservice"
 }
 
-variable "image_tag" {
-  description = "Container image tag deployed to Cloud Run."
+variable "image_digest" {
+  description = "Immutable multi-platform container image digest deployed to Cloud Run."
   type        = string
-  default     = "latest"
+  default     = "sha256:73e6c8742e31d45414d6b58beb3ecbbf51b971ff5973b1d332aae1a48d3c7cf7"
 
   validation {
-    condition     = length(trimspace(var.image_tag)) > 0
-    error_message = "image_tag cannot be empty."
+    condition     = can(regex("^sha256:[0-9a-f]{64}$", var.image_digest))
+    error_message = "image_digest must be a lowercase sha256 digest."
   }
 }
 
