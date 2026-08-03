@@ -21,7 +21,7 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
   template {
     service_account                  = google_service_account.runtime.email
     max_instance_request_concurrency = 80
-    # We use gen 1 since it allows for smaller than 512Mi cpu, and also it has faster cold starts.
+    # We use gen 1 since it allows for smaller than 512Mi memory, and also it has faster cold starts.
     execution_environment = "EXECUTION_ENVIRONMENT_GEN1"
 
     scaling {
@@ -49,6 +49,8 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
       resources {
         cpu_idle = true
         limits = {
+          # Lower CPU would make sense, but it requires setting max_instance_request_concurrency=1 (as per https://docs.cloud.google.com/run/docs/configuring/services/cpu#cpu-min)
+          # I think that for this simlpe service, we are better off with it handling a ton of requests concurrently instead of spinning up more replicas
           cpu    = "1"
           memory = "256Mi"
         }
