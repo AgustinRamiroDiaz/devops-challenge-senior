@@ -97,7 +97,7 @@ release before updating `terraform/terraform.tfvars` with the new image digest:
 
 ```bash
 docker login
-make publish TAG=v1.0.5
+make publish TAG=v1.0.6
 ```
 
 Alternatively, use the manually triggered **Build and publish Docker image**

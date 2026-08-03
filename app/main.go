@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -17,6 +19,10 @@ import (
 const defaultPort = "8080"
 
 const gracefulShutdownTimeout = 8 * time.Second
+
+const instanceIDHeader = "X-Instance-ID"
+
+var instanceID = newInstanceID()
 
 type response struct {
 	Timestamp string `json:"timestamp"`
@@ -104,6 +110,8 @@ func handleTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// This process-scoped value lets load tests distinguish Cloud Run instances.
+	w.Header().Set(instanceIDHeader, instanceID)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response{
 		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
@@ -111,6 +119,14 @@ func handleTime(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		slog.Error("failed to encode response", "error", err)
 	}
+}
+
+func newInstanceID() string {
+	value := make([]byte, 16)
+	if _, err := rand.Read(value); err != nil {
+		panic("generate instance ID: " + err.Error())
+	}
+	return hex.EncodeToString(value)
 }
 
 func visitorIP(r *http.Request) string {

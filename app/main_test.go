@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +23,13 @@ func TestRootReturnsTimestampAndVisitorIP(t *testing.T) {
 	if got := recorder.Header().Get("Content-Type"); got != "application/json" {
 		t.Fatalf("expected JSON content type, got %q", got)
 	}
+	responseInstanceID := recorder.Header().Get(instanceIDHeader)
+	if len(responseInstanceID) != 32 {
+		t.Fatalf("expected 128-bit instance ID header, got %q", responseInstanceID)
+	}
+	if _, err := hex.DecodeString(responseInstanceID); err != nil {
+		t.Fatalf("expected hexadecimal instance ID header, got %q", responseInstanceID)
+	}
 
 	var body response
 	if err := json.NewDecoder(recorder.Body).Decode(&body); err != nil {
@@ -32,6 +40,18 @@ func TestRootReturnsTimestampAndVisitorIP(t *testing.T) {
 	}
 	if _, err := time.Parse(time.RFC3339Nano, body.Timestamp); err != nil {
 		t.Errorf("expected RFC3339 timestamp, got %q: %v", body.Timestamp, err)
+	}
+}
+
+func TestInstanceIDIsStableForProcessLifetime(t *testing.T) {
+	first := httptest.NewRecorder()
+	second := httptest.NewRecorder()
+
+	routes().ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/", nil))
+	routes().ServeHTTP(second, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if first.Header().Get(instanceIDHeader) != second.Header().Get(instanceIDHeader) {
+		t.Fatal("expected the instance ID to remain stable for the process lifetime")
 	}
 }
 
