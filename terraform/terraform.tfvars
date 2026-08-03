@@ -3,5 +3,5 @@
 region            = "us-central1"
 project_id_prefix = "agustinramirodiaz"
 image_repository  = "docker.io/agustinramirodiaz/simpletimeservice"
-image_digest      = "sha256:73e6c8742e31d45414d6b58beb3ecbbf51b971ff5973b1d332aae1a48d3c7cf7"
+image_digest      = "sha256:ba0aec0ff23e87d1b9ecfb30d1e7b0bb06255b37c49710a1c319e5a674ae5012"
 proxy_subnet_cidr = "10.10.1.0/24"
