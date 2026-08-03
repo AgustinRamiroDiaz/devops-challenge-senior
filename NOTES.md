@@ -12,11 +12,11 @@ Using a flat structure has the benefits of:
 ## Pin deployed images by digest
 
 Cloud Run deploys the image using its immutable OCI manifest digest rather
-than a mutable tag. The published `v1.0.2` multi-platform image currently
+than a mutable tag. The published `v1.0.3` multi-platform image currently
 resolves to:
 
 ```text
-docker.io/agustinramirodiaz/simpletimeservice@sha256:73e6c8742e31d45414d6b58beb3ecbbf51b971ff5973b1d332aae1a48d3c7cf7
+docker.io/agustinramirodiaz/simpletimeservice@sha256:4353a100455343231e916f411a1adb3293bd564932b42348c8df8164fcc79346
 ```
 
 Tags remain useful for publishing and discovering releases, but a registry
@@ -27,11 +27,14 @@ After publishing a new release, resolve its multi-platform manifest digest:
 
 ```bash
 docker buildx imagetools inspect \
-  docker.io/agustinramirodiaz/simpletimeservice:v1.0.2
+  docker.io/agustinramirodiaz/simpletimeservice:v1.0.3
 ```
 
 Update `image_digest` in `terraform/terraform.tfvars` with the reported
-top-level digest. The variable validation rejects tags and malformed digests.
+top-level `Digest`, not one of the per-platform manifest digests listed under
+`Manifests`. Cloud Run needs the multi-platform index digest so it can select
+the `linux/amd64` image variant. The variable validation rejects tags and
+malformed digests.
 
 # Current design is a bit excessive
 
