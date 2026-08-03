@@ -182,6 +182,61 @@ Useful outputs are available with:
 terraform output
 ```
 
+## Advanced
+
+### Select the Terraform state backend
+
+The committed Terraform configuration intentionally has no `backend` block,
+so Terraform uses the local backend and stores state in
+`terraform/terraform.tfstate` by default. From the repository root, initialize
+or switch back to local state with:
+
+```bash
+make terraform-init
+```
+
+To use an existing Google Cloud Storage bucket instead, provide its name to the
+GCS initialization target:
+
+```bash
+make terraform-init-gcs \
+  GCS_BUCKET=my-terraform-state-bucket \
+  GCS_PREFIX=env/dev
+```
+
+`GCS_PREFIX` is optional and defaults to `simple-time-service`. The command
+generates `terraform/backend_override.tf` immediately before initialization:
+
+```hcl
+terraform {
+  backend "gcs" {
+    bucket = "my-terraform-state-bucket"
+    prefix = "env/dev"
+  }
+}
+```
+
+The generated file is ignored by Git. Both initialization commands use
+`terraform init -migrate-state`, so Terraform can copy existing state when you
+switch between local and GCS backends. Review and confirm any migration prompt;
+do not treat a newly empty state as interchangeable with the existing state.
+
+For non-interactive initialization after the backend and state migration are
+already established, pass additional initialization flags explicitly:
+
+```bash
+make terraform-init-gcs \
+  GCS_BUCKET=my-terraform-state-bucket \
+  GCS_PREFIX=env/dev \
+  TF_INIT_FLAGS="-input=false"
+```
+
+The GCS bucket must exist before `terraform init`; it cannot be created by this
+same root configuration because Terraform initializes the backend before it
+creates resources. The authenticated identity also needs object access to the
+bucket. Enable Object Versioning on the bucket so previous state versions can
+be recovered after accidental deletion or corruption.
+
 ## Clean up
 
 Destroy all resources when finished to avoid ongoing charges:
