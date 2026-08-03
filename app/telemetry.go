@@ -18,6 +18,32 @@ import (
 
 const telemetryShutdownTimeout = 5 * time.Second
 
+// Extend the standard HTTP buckets so this sub-millisecond handler is visible.
+var requestDurationBuckets = []float64{
+	0.00001,
+	0.000025,
+	0.00005,
+	0.0001,
+	0.00025,
+	0.0005,
+	0.001,
+	0.0025,
+	0.005,
+	0.01,
+	0.025,
+	0.05,
+	0.075,
+	0.1,
+	0.25,
+	0.5,
+	0.75,
+	1,
+	2.5,
+	5,
+	7.5,
+	10,
+}
+
 func initMeterProvider(ctx context.Context) (*sdkmetric.MeterProvider, error) {
 	if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
 		return nil, nil
@@ -37,6 +63,18 @@ func initMeterProvider(ctx context.Context) (*sdkmetric.MeterProvider, error) {
 			exporter,
 			sdkmetric.WithInterval(30*time.Second),
 			sdkmetric.WithTimeout(5*time.Second),
+		)),
+		sdkmetric.WithView(sdkmetric.NewView(
+			sdkmetric.Instrument{
+				Name: "http.server.request.duration",
+				Kind: sdkmetric.InstrumentKindHistogram,
+			},
+			sdkmetric.Stream{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
+					Boundaries: requestDurationBuckets,
+					NoMinMax:   true,
+				},
+			},
 		)),
 	)
 	otel.SetMeterProvider(meterProvider)
@@ -65,9 +103,9 @@ func instrumentRequests(next http.Handler) http.Handler {
 	}
 
 	requestDuration, err := meter.Float64Histogram(
-		"simple_time_request_duration_ms",
-		metric.WithDescription("HTTP request duration in milliseconds."),
-		metric.WithUnit("ms"),
+		"http.server.request.duration",
+		metric.WithDescription("Duration of HTTP server requests."),
+		metric.WithUnit("s"),
 	)
 	if err != nil {
 		slog.Error("failed to create request duration histogram", "error", err)
@@ -91,7 +129,7 @@ func instrumentRequests(next http.Handler) http.Handler {
 			requestCount.Add(r.Context(), 1, attrs)
 		}
 		if requestDuration != nil {
-			requestDuration.Record(r.Context(), float64(time.Since(start).Milliseconds()), attrs)
+			requestDuration.Record(r.Context(), time.Since(start).Seconds(), attrs)
 		}
 	})
 }

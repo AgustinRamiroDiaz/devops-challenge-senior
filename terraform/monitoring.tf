@@ -7,13 +7,32 @@ resource "google_monitoring_dashboard" "simple_time_service" {
       columns = 12
       tiles = [
         {
+          width  = 12
+          height = 2
+          widget = {
+            title = "How to read this dashboard"
+            text = {
+              format  = "MARKDOWN"
+              content = <<-EOT
+                **Application metrics exported by the OpenTelemetry sidecar**
+
+                - Rates use a trailing **5-minute window**.
+                - Latency measures **Go HTTP handler execution**.
+                - Latency excludes client, network, and load-balancer time.
+              EOT
+            }
+          }
+        },
+        {
+          yPos   = 2
           width  = 4
           height = 4
           widget = {
-            title = "Request rate"
+            title = "Request rate — trailing 5-minute average"
             scorecard = {
               timeSeriesQuery = {
                 prometheusQuery = "sum(rate(simple_time_requests_total[5m]))"
+                unitOverride    = "{request}/s"
               }
               sparkChartView = {
                 sparkChartType = "SPARK_LINE"
@@ -23,13 +42,15 @@ resource "google_monitoring_dashboard" "simple_time_service" {
         },
         {
           xPos   = 4
+          yPos   = 2
           width  = 4
           height = 4
           widget = {
-            title = "5xx error rate (%)"
+            title = "5xx error rate — share of requests"
             scorecard = {
               timeSeriesQuery = {
                 prometheusQuery = "100 * (sum(rate(simple_time_requests_total{http_response_status_code=~\"5..\"}[5m])) or vector(0)) / clamp_min((sum(rate(simple_time_requests_total[5m])) or vector(0)), 0.001)"
+                unitOverride    = "%"
               }
               sparkChartView = {
                 sparkChartType = "SPARK_LINE"
@@ -51,13 +72,15 @@ resource "google_monitoring_dashboard" "simple_time_service" {
         },
         {
           xPos   = 8
+          yPos   = 2
           width  = 4
           height = 4
           widget = {
-            title = "p95 latency (ms)"
+            title = "p95 handler latency — trailing 5 minutes"
             scorecard = {
               timeSeriesQuery = {
-                prometheusQuery = "histogram_quantile(0.95, sum by (le) (rate(simple_time_request_duration_ms_milliseconds_bucket[5m])))"
+                prometheusQuery = "1000 * histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))"
+                unitOverride    = "ms"
               }
               sparkChartView = {
                 sparkChartType = "SPARK_LINE"
@@ -66,16 +89,17 @@ resource "google_monitoring_dashboard" "simple_time_service" {
           }
         },
         {
-          yPos   = 4
+          yPos   = 6
           width  = 6
           height = 5
           widget = {
-            title = "Request rate by route"
+            title = "Request rate by route — traffic distribution"
             xyChart = {
               dataSets = [
                 {
                   timeSeriesQuery = {
                     prometheusQuery = "sum by (http_route) (rate(simple_time_requests_total[5m]))"
+                    unitOverride    = "{request}/s"
                   }
                   plotType   = "LINE"
                   targetAxis = "Y1"
@@ -93,16 +117,17 @@ resource "google_monitoring_dashboard" "simple_time_service" {
         },
         {
           xPos   = 6
-          yPos   = 4
+          yPos   = 6
           width  = 6
           height = 5
           widget = {
-            title = "Request rate by status code"
+            title = "Request rate by status code — response outcomes"
             xyChart = {
               dataSets = [
                 {
                   timeSeriesQuery = {
                     prometheusQuery = "sum by (http_response_status_code) (rate(simple_time_requests_total[5m]))"
+                    unitOverride    = "{request}/s"
                   }
                   plotType   = "STACKED_BAR"
                   targetAxis = "Y1"
@@ -119,17 +144,18 @@ resource "google_monitoring_dashboard" "simple_time_service" {
           }
         },
         {
-          yPos   = 9
+          yPos   = 11
           width  = 12
           height = 5
           widget = {
-            title = "Request latency percentiles"
+            title = "Handler latency percentiles — response-time distribution"
             xyChart = {
               dataSets = [
                 {
                   legendTemplate = "p50"
                   timeSeriesQuery = {
-                    prometheusQuery = "histogram_quantile(0.50, sum by (le) (rate(simple_time_request_duration_ms_milliseconds_bucket[5m])))"
+                    prometheusQuery = "1000 * histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))"
+                    unitOverride    = "ms"
                   }
                   plotType   = "LINE"
                   targetAxis = "Y1"
@@ -137,7 +163,8 @@ resource "google_monitoring_dashboard" "simple_time_service" {
                 {
                   legendTemplate = "p95"
                   timeSeriesQuery = {
-                    prometheusQuery = "histogram_quantile(0.95, sum by (le) (rate(simple_time_request_duration_ms_milliseconds_bucket[5m])))"
+                    prometheusQuery = "1000 * histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))"
+                    unitOverride    = "ms"
                   }
                   plotType   = "LINE"
                   targetAxis = "Y1"
@@ -145,7 +172,8 @@ resource "google_monitoring_dashboard" "simple_time_service" {
                 {
                   legendTemplate = "p99"
                   timeSeriesQuery = {
-                    prometheusQuery = "histogram_quantile(0.99, sum by (le) (rate(simple_time_request_duration_ms_milliseconds_bucket[5m])))"
+                    prometheusQuery = "1000 * histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))"
+                    unitOverride    = "ms"
                   }
                   plotType   = "LINE"
                   targetAxis = "Y1"

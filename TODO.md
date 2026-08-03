@@ -11,5 +11,3 @@ With otel, prometheus and grafana
 # Add alerts
 
 For app errors
-
-# Improve dashboard
