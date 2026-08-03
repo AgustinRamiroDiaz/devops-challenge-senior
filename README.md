@@ -279,10 +279,13 @@ For a new deployment, obtain the generated project ID with
 `terraform output -raw project_id`, its number with `gcloud projects describe`,
 and the immutable repository ID with `gh api repos/$REPOSITORY --jq .id`.
 
-Enable token exchange and create the two service accounts:
+Enable the APIs required for token exchange and for Terraform to read the
+project and its billing association, then create the two service accounts:
 
 ```bash
 gcloud services enable \
+  cloudresourcemanager.googleapis.com \
+  cloudbilling.googleapis.com \
   iamcredentials.googleapis.com \
   sts.googleapis.com \
   --project="$APP_PROJECT_ID"
@@ -295,6 +298,10 @@ gcloud iam service-accounts create terraform-apply \
   --project="$APP_PROJECT_ID" \
   --display-name="Terraform main apply"
 ```
+
+Cloud Resource Manager and Cloud Billing are bootstrap dependencies. They must
+be enabled manually because Terraform calls them while refreshing the
+`google_project` resource, before it can plan any API-enablement resources.
 
 Grant the plan identity read-only access. Plans use `-lock=false`, allowing the
 state bucket role to remain read-only:
