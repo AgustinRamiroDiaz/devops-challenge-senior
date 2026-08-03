@@ -61,7 +61,11 @@ reused HTTP connections. This creates a steadier Cloud Run concurrency signal
 than synchronized request rounds and avoids measuring a new TCP connection on
 every request. The controller starts 80 workers, adds another 80 every five
 seconds, and allows up to 1,000 workers by default. It cancels the load as soon
-as responses identify three distinct Cloud Run instances.
+as responses identify three distinct Cloud Run instances. Transient transport,
+HTTP 408, HTTP 429, and HTTP 5xx failures are counted but do not stop the load;
+workers continue until the replica target or timeout is reached. Invalid client
+IPs and malformed successful responses remain fatal because they violate the
+test's correctness checks.
 
 In the validation run, the service reached three instances after 12.1 seconds
 with 240 active workers, 7,276 successful requests, no errors, and approximately

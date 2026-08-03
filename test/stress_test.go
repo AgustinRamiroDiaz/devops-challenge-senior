@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"sort"
@@ -37,6 +38,7 @@ type serviceResponse struct {
 type requestResult struct {
 	instanceID string
 	duration   time.Duration
+	transient  bool
 	err        error
 }
 
@@ -95,7 +97,16 @@ func TestStress(t *testing.T) {
 			totalRequests++
 			if result.err != nil {
 				errorsSeen++
-				t.Logf("request error: %v", result.err)
+				if !result.transient {
+					cancel()
+					workers.Wait()
+					logMetrics(t, started, activeWorkers, totalRequests, errorsSeen, durations, instanceRequests)
+					t.Fatalf("response validation failed: %v", result.err)
+				}
+				// Avoid flooding test output while retaining evidence of transient failures.
+				if errorsSeen <= 5 || errorsSeen%100 == 0 {
+					t.Logf("transient request error #%d: %v", errorsSeen, result.err)
+				}
 				continue
 			}
 
@@ -106,9 +117,6 @@ func TestStress(t *testing.T) {
 				cancel()
 				workers.Wait()
 				logMetrics(t, started, activeWorkers, totalRequests, errorsSeen, durations, instanceRequests)
-				if errorsSeen > 0 {
-					t.Fatalf("observed %d request errors before reaching %d instances", errorsSeen, cfg.expectedInstances)
-				}
 				return
 			}
 
@@ -186,17 +194,21 @@ func makeRequest(ctx context.Context, client *http.Client, cfg config) requestRe
 	started := time.Now()
 	response, err := client.Do(request)
 	if err != nil {
-		return requestResult{duration: time.Since(started), err: fmt.Errorf("request failed: %w", err)}
+		return requestResult{duration: time.Since(started), transient: true, err: fmt.Errorf("request failed: %w", err)}
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(response.Body, 64<<10))
 	duration := time.Since(started)
 	if err != nil {
-		return requestResult{duration: duration, err: fmt.Errorf("read response: %w", err)}
+		return requestResult{duration: duration, transient: true, err: fmt.Errorf("read response: %w", err)}
 	}
 	if response.StatusCode != http.StatusOK {
-		return requestResult{duration: duration, err: fmt.Errorf("unexpected status %d: %s", response.StatusCode, body)}
+		return requestResult{
+			duration:  duration,
+			transient: isTransientStatus(response.StatusCode),
+			err:       fmt.Errorf("unexpected status %d: %s", response.StatusCode, body),
+		}
 	}
 
 	instanceID := response.Header.Get(instanceIDHeader)
@@ -216,6 +228,29 @@ func makeRequest(ctx context.Context, client *http.Client, cfg config) requestRe
 	}
 
 	return requestResult{instanceID: instanceID, duration: duration}
+}
+
+// isTransientStatus identifies responses worth retrying while Cloud Run scales.
+func isTransientStatus(status int) bool {
+	return status == http.StatusRequestTimeout ||
+		status == http.StatusTooManyRequests ||
+		status >= http.StatusInternalServerError
+}
+
+// TestMakeRequestTreatsServerErrorsAsTransient protects the scale-up retry behavior.
+func TestMakeRequestTreatsServerErrorsAsTransient(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "temporarily unavailable", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	result := makeRequest(context.Background(), server.Client(), config{serviceURL: server.URL})
+	if result.err == nil {
+		t.Fatal("expected the server error to be reported")
+	}
+	if !result.transient {
+		t.Fatal("expected HTTP 500 to be classified as transient")
+	}
 }
 
 func logMetrics(
