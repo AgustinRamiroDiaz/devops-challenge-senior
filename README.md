@@ -28,9 +28,9 @@ flowchart LR
 
     neg["Serverless NEG"]
     subgraph cloud_run["Cloud Run service<br/>Ingress: internal and Cloud Load Balancing only"]
-      app["App container<br/>SimpleTimeService<br/>:8080"]
-      otel["Sidecar container<br/>OpenTelemetry Collector<br/>OTLP :4317/:4318"]
-      app -- "OTLP metrics over localhost" --> otel
+      app["App container<br/>SimpleTimeService :8080<br/>starts independently"]
+      otel["Sidecar container<br/>OpenTelemetry Collector<br/>starts concurrently"]
+      app -. "OTLP metrics over localhost<br/>when available" .-> otel
     end
 
     observability["Google Cloud Observability<br/>Managed Service for Prometheus"]
@@ -62,7 +62,11 @@ The Cloud Run revision uses two containers in the same service instance. The
 and sends them to the `otel-collector` sidecar over localhost. The sidecar uses
 Google's OpenTelemetry Collector image, reads its configuration from Secret
 Manager, batches/enriches metrics with Cloud Run metadata, and exports them to
-Google Cloud Observability.
+Google Cloud Observability. The containers have no startup-order dependency, so
+Cloud Run starts them concurrently and can route traffic as soon as the app is
+listening on port `8080`. The OTLP exporter reconnects when the Collector is
+available; this favors request startup latency over guaranteeing delivery of
+telemetry emitted during the brief sidecar startup window.
 
 Terraform also provisions a Cloud Monitoring dashboard for request rate,
 HTTP errors, latency percentiles, routes, and response status codes.

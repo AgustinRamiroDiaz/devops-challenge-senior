@@ -104,8 +104,6 @@ resource "google_cloud_run_v2_service" "simple_time_service" {
       name  = "app"
       image = "${var.image_repository}@${var.image_digest}"
 
-      depends_on = ["otel-collector"]
-
       env {
         name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
         value = "http://localhost:4317"
